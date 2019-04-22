@@ -33,7 +33,9 @@ class g(nn.Module):
     def __init__(self):
         super().__init__()
         self.W = nn.Linear(28*28,10)
-        self.a = nn.Parameter(torch.zeros(10).uniform_(-1, 1))
+        a = torch.zeros(10)
+        a.uniform_(-1, 1)
+        self.a = nn.Parameter(a)
         self.a.requires_grad = True
         
         
@@ -44,14 +46,14 @@ class g(nn.Module):
 def train(train_loader, use_cuda=False, modified_loss=False):
     model = Classifier()
     if use_cuda:
-        model = model.cuda()
+        model.cuda()
     model.train()
     if modified_loss:
         g_ = g()
         lambda_ = 10
         if use_cuda:
             g_ = g_.cuda()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+    optimizer = torch.optim.SGD(list(model.parameters()) + list(g_.parameters()), lr=0.01, momentum=0.5) if modified_loss else torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
     for epoch in range(20):
         for idx, (data, target) in enumerate(train_loader):
             if use_cuda:
@@ -60,10 +62,10 @@ def train(train_loader, use_cuda=False, modified_loss=False):
             optimizer.zero_grad()
             out = model(data)
             if modified_loss:
-                out += g_(data)
+                out = out + g_(data)
             loss = F.cross_entropy(out, target)
             if modified_loss:
-                loss += lambda_*torch.norm(g_.a)**2
+                loss = loss + lambda_*torch.norm(g_.a)**2
             loss.backward()
             optimizer.step()
             if idx%100 == 0:
