@@ -1,0 +1,6 @@
+Data/
+Models/
+__pycache__/
+*.pyc
+*.zip
+*.jpg
