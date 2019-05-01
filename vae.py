@@ -5,6 +5,7 @@ import torchvision
 import argparse
 import numpy as np
 from matplotlib import pyplot as plt
+import os
 
 
 class View(nn.Module):
@@ -115,7 +116,6 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
             # put batch on device
             batch = batch.to(device=device)
 
-
             use_modif = True if lamb is not None else False
             img, mu, log_sig = model(batch, use_modif)
 
@@ -131,14 +131,55 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
 
         losses.append(np.mean(epoch_loss))
 
-        print("After epoch {}, the loss is: ", losses[-1])
+        print("After epoch {}, the loss is: ".format(epoch), losses[-1])
 
     plt.figure()
     plt.title("Training loss over epochs")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.plot(np.arange(1, nb_epochs + 1), losses)
-    plt.savefig('train_loss.png')
+    plt.savefig('train_loss_{}.png'.format("new" if lamb is not None else ""))
+
+
+def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
+    """
+    Function that evaluates the model by evaluating the loss on the test set and generating images
+    :param model:
+    :param test_iter:
+    :return:
+    """
+    model.eval()
+
+    with torch.no_grad():
+        losses = []
+        for i, (batch, label) in test_iter:
+            batch.to(device=device)
+
+            use_modif = True if lamb is not None else False
+            img, mu, log_sig = model(batch, use_modif)
+
+            # train the network
+            loss = recon_loss(img, batch) + kl_div(mu, log_sig)
+            loss += lamb * (torch.norm(model.a) ** 2.).mean() if lamb is not None else 0.
+            losses.append(loss.item())
+
+
+        # generate images
+        pil_im = torchvision.transforms.ToPILImage()
+
+        z = torch.randn(nb_imgs, model.dimz)
+
+        imgs = model.dec(z)
+
+        # create folder for images if not already created
+        if not os.path.isdir(path):
+            os.mkdir(path)
+
+        for i in range(nb_imgs):
+            im = pil_im(imgs[i])
+            save_path = os.path.join(path, 'img_{id}_{net}'.format(id=i, net="new" if lamb is not None else ""))
+            im.save(save_path)
+    return
 
 
 if __name__ == "__main__":
@@ -150,6 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=1, help="The batch size for the model")
     parser.add_argument("--dimz", type=int, default=100, help="The dimension size of the latent")
     parser.add_argument('--lamb', type=float, default=None, help="The lambda value for the new network's regularization")
+    parser.add_argument("--img_dir", type=str, default="img", help="Directory where we save the images")
     args = parser.parse_args()
     if args.cuda:
         args.device = 'cuda'
@@ -172,4 +214,4 @@ if __name__ == "__main__":
         train(model, train_iter, args.nb_epochs, args.lr, args.device, lamb=args.lamb)
 
     # evaluate the model
-    #TODO
+    evaluate(model, test_iter, args.img_dir, 10, device=args.device, lamb=args.lamb)
