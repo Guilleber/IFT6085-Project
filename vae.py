@@ -73,7 +73,7 @@ class VAE(nn.Module):
         
 
     def add_term(self, x, use=False):
-        return torch.exp(self.log_exp(x.view(-1, 784 + 2 * self.dimz))) * self.a if use else \
+        return torch.exp(self.log_exp(x.view(-1, 784))) * self.a if use else \
             torch.zeros(x.size()[0], 784 + 2 * self.dimz).to(x.device)
 
     def forward(self, x, mod=False):
@@ -121,7 +121,7 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
 
             # train the network
             loss = recon_loss(img, batch) + kl_div(mu, log_sig)
-            loss += lamb * (torch.norm(model.a, dim=1) ** 2.).mean() if lamb is not None else 0.
+            loss += lamb * (torch.norm(model.a) ** 2.).mean() if lamb is not None else 0.
             epoch_loss.append(loss.item())
 
             # minimize the loss
