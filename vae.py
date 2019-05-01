@@ -100,7 +100,7 @@ def recon_loss(img, target):
 
 def kl_div(mu, log_sig):
     sig = torch.exp(log_sig)
-    return ((mu ** 2. + sig ** 2. -  log_sig - 1.).sum(dim=1)).mean()
+    return 0.5 * ((mu ** 2. + sig ** 2. - 2 * log_sig - 1.).sum(dim=1)).mean()
 
 
 def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
