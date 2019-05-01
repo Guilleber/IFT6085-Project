@@ -115,7 +115,9 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
             # put batch on device
             batch = batch.to(device=device)
 
-            img, mu, log_sig = model(batch)
+
+            use_modif = True if lamb is not None else False
+            img, mu, log_sig = model(batch, use_modif)
 
             # train the network
             loss = recon_loss(img, batch) + kl_div(mu, log_sig)
@@ -147,6 +149,7 @@ if __name__ == "__main__":
     parser.add_argument("--nb_epochs", type=int, default=20, help="The number of epochs to train")
     parser.add_argument("--batch_size", type=int, default=1, help="The batch size for the model")
     parser.add_argument("--dimz", type=int, default=100, help="The dimension size of the latent")
+    parser.add_argument('--lamb', type=float, default=None, help="The lambda value for the new network's regularization")
     args = parser.parse_args()
     if args.cuda:
         args.device = 'cuda'
@@ -166,7 +169,7 @@ if __name__ == "__main__":
 
     # train the model
     if args.test is False:
-        train(model, train_iter, args.nb_epochs, args.lr, args.device)
+        train(model, train_iter, args.nb_epochs, args.lr, args.device, lamb=args.lamb)
 
     # evaluate the model
     #TODO
