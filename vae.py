@@ -168,7 +168,6 @@ def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
         pil_im = torchvision.transforms.ToPILImage()
 
         z = torch.randn(nb_imgs, model.dimz, device=device)
-        print(z.dtype())
         imgs = model.dec(z)
 
         # create folder for images if not already created
