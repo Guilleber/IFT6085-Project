@@ -70,10 +70,11 @@ class VAE(nn.Module):
 
         self.log_exp = nn.Linear(784, 784 + 2 * self.dimz)
         self.a = nn.Parameter(torch.randn(784 + 2 * self.dimz, requires_grad=True))
+        
 
     def add_term(self, x, use=False):
         return torch.exp(self.log_exp(x.view(-1, 784 + 2 * self.dimz))) * self.a if use else \
-            torch.zeros(x.size()[0], 784 + 2 * self.dimz)
+            torch.zeros(x.size()[0], 784 + 2 * self.dimz).to(x.get_device())
 
     def forward(self, x, mod=False):
         encode = model.enc(x)
@@ -90,7 +91,7 @@ class VAE(nn.Module):
         add_img = add_term[:, :784].view(-1, 28, 28)
         add_params = add_term[:, 784:].view(-1, 2 * self.dimz)
 
-        return img + add_img, mu + add_params[:, self.dimz], log_sig + add_params[:, self.dimz:]
+        return img + add_img, mu + add_params[:, :self.dimz], log_sig + add_params[:, self.dimz:]
 
 
 def recon_loss(img, target):
