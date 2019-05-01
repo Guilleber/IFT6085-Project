@@ -118,7 +118,7 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
 
             # train the network
             loss = recon_loss(img, batch) - kl_div(mu, log_sig)
-            loss += lamb * (torch.norm(model.a, dim=1) ** 2.).mean()  if lamb is not None else 0.
+            loss += lamb * (torch.norm(model.a, dim=1) ** 2.).mean() if lamb is not None else 0.
             epoch_loss.append(loss.item())
 
             # minimize the loss
