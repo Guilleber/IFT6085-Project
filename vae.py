@@ -95,7 +95,6 @@ class VAE(nn.Module):
 
 
 def recon_loss(img, target):
-    print(img.size(), target.size())
     return (torch.norm(img.view(-1,784) - target.view(-1, 784)) ** 2.).mean()
 
 
