@@ -74,7 +74,7 @@ class VAE(nn.Module):
 
     def add_term(self, x, use=False):
         return torch.exp(self.log_exp(x.view(-1, 784 + 2 * self.dimz))) * self.a if use else \
-            torch.zeros(x.size()[0], 784 + 2 * self.dimz).to(x.get_device())
+            torch.zeros(x.size()[0], 784 + 2 * self.dimz).to(x.device)
 
     def forward(self, x, mod=False):
         encode = model.enc(x)
@@ -86,7 +86,7 @@ class VAE(nn.Module):
 
         z = mu + sig * e
 
-        img = model.dec(z).squeeze(dim=1)
+        img = model.dec(z)
         add_term = self.add_term(x, use=mod)
         add_img = add_term[:, :784].view(-1, 28, 28)
         add_params = add_term[:, 784:].view(-1, 2 * self.dimz)
@@ -95,12 +95,13 @@ class VAE(nn.Module):
 
 
 def recon_loss(img, target):
-    return ((img - target) ** 2.).mean()
+    print(img.size(), target.size())
+    return (torch.norm(img.view(-1,784) - target.view(-1, 784)) ** 2.).mean()
 
 
 def kl_div(mu, log_sig):
     sig = torch.exp(log_sig)
-    return (mu ** 2. + sig ** 2. + log_sig + 1.).mean()
+    return ((mu ** 2. + sig ** 2. -  log_sig - 1.).sum(dim=1)).mean()
 
 
 def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
@@ -118,7 +119,7 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
             img, mu, log_sig = model(batch)
 
             # train the network
-            loss = recon_loss(img, batch) - kl_div(mu, log_sig)
+            loss = recon_loss(img, batch) + kl_div(mu, log_sig)
             loss += lamb * (torch.norm(model.a, dim=1) ** 2.).mean() if lamb is not None else 0.
             epoch_loss.append(loss.item())
 
