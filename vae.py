@@ -134,6 +134,7 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.plot(np.arange(1, nb_epochs + 1), losses)
+    plt.savefig('train_loss.png')
 
 
 if __name__ == "__main__":
@@ -151,10 +152,12 @@ if __name__ == "__main__":
         args.device = 'cpu'
 
     # load FMNIST
-    train_iter = torchvision.datasets.FashionMNIST('train_data', download=True,
+    train_data = torchvision.datasets.FashionMNIST('train_data', download=True,
                                                    train=True, transform=torchvision.transforms.ToTensor())
-    test_iter = torchvision.datasets.FashionMNIST('test_data', download=True,
+    test_data = torchvision.datasets.FashionMNIST('test_data', download=True,
                                                   train=False, transform=torchvision.transforms.ToTensor())
+    train_iter = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+    test_iter = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
 
     # create the model
     model = VAE(batch_size=args.batch_size, dimz=args.dimz).to(args.device)
