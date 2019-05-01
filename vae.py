@@ -88,14 +88,14 @@ class VAE(nn.Module):
 
         img = model.dec(z)
         add_term = self.add_term(x, use=mod)
-        add_img = add_term[:, :784].view(-1, 28, 28)
+        add_img = add_term[:, :784].view(-1, 1, 28, 28)
         add_params = add_term[:, 784:].view(-1, 2 * self.dimz)
 
         return img + add_img, mu + add_params[:, :self.dimz], log_sig + add_params[:, self.dimz:]
 
 
 def recon_loss(img, target):
-    return (torch.norm(img.view(-1,784) - target.view(-1, 784)) ** 2.).mean()
+    return (torch.norm(img.view(-1,784) - target.view(-1, 784), dim=1) ** 2.).mean()
 
 
 def kl_div(mu, log_sig):
