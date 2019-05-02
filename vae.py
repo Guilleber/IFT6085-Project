@@ -175,8 +175,8 @@ def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
             os.mkdir(path)
 
         for i in range(nb_imgs):
-            im = pil_im(imgs[i])
-            save_path = os.path.join(path, 'img_{id}_{net}'.format(id=i, net="new" if lamb is not None else ""))
+            im = pil_im(imgs[i].to('cpu'))
+            save_path = os.path.join(path, 'img_{id}_{net}.png'.format(id=i, net="new" if lamb is not None else ""))
             im.save(save_path)
     return
 
