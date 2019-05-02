@@ -133,12 +133,13 @@ def train(model, data_iter, nb_epochs, lr, device='cpu', lamb=None):
 
         print("After epoch {}, the loss is: ".format(epoch), losses[-1])
 
+    torch.save(model.parameters(), "vae{}".format("_new" if lamb is not None else ""))
     plt.figure()
     plt.title("Training loss over epochs")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.plot(np.arange(1, nb_epochs + 1), losses)
-    plt.savefig('train_loss_{}.png'.format("new" if lamb is not None else ""))
+    plt.savefig('train_loss{}.png'.format("_new" if lamb is not None else ""))
 
 
 def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
@@ -163,6 +164,8 @@ def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
             loss += lamb * (torch.norm(model.a) ** 2.).mean() if lamb is not None else 0.
             losses.append(loss.item())
 
+        # print loss on the test set
+        print("The loss on the test set is: ", np.mean(losses))
 
         # generate images
         pil_im = torchvision.transforms.ToPILImage()
@@ -176,7 +179,7 @@ def evaluate(model, test_iter, path, nb_imgs, device='cpu', lamb=None):
 
         for i in range(nb_imgs):
             im = pil_im(imgs[i].to('cpu'))
-            save_path = os.path.join(path, 'img_{id}_{net}.png'.format(id=i, net="new" if lamb is not None else ""))
+            save_path = os.path.join(path, 'img_{id}{net}.png'.format(id=i, net="_new" if lamb is not None else ""))
             im.save(save_path)
     return
 
@@ -191,6 +194,8 @@ if __name__ == "__main__":
     parser.add_argument("--dimz", type=int, default=100, help="The dimension size of the latent")
     parser.add_argument('--lamb', type=float, default=None, help="The lambda value for the new network's regularization")
     parser.add_argument("--img_dir", type=str, default="img", help="Directory where we save the images")
+    parser.add_argument("--save_path", type=str, default="vae.pt", help="Save the model to this path")
+    parser.add_argument("--load_path", type=str, default="vae.pt", help="Load the model")
     args = parser.parse_args()
     if args.cuda:
         args.device = 'cuda'
@@ -211,6 +216,9 @@ if __name__ == "__main__":
     # train the model
     if args.test is False:
         train(model, train_iter, args.nb_epochs, args.lr, args.device, lamb=args.lamb)
-
-    # evaluate the model
-    evaluate(model, test_iter, args.img_dir, 10, device=args.device, lamb=args.lamb)
+        torch.save(model.state_dict(), args.save_path)
+    else:
+        # load the model
+        model.load_state_dict(torch.load(args.load_path))
+        # evaluate the model
+        evaluate(model, test_iter, args.img_dir, 10, device=args.device, lamb=args.lamb)
